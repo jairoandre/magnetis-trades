@@ -1,0 +1,28 @@
+{
+  "name": "magnetis-test",
+  "version": "1.0.0",
+  "description": "Kind of CRUD for a test on Magnetis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node_modules/.bin/webpack-dev-server --hot --host localhost --port 3000 --colors --inline",
+    "build": "node_modules/.bin/webpack --colors",
+    "reactor": "node_modules/.bin/elm-reactor"
+  },
+  "author": "jairoandre",
+  "license": "BSD3",
+  "devDependencies": {
+    "clean-webpack-plugin": "^0.1.14",
+    "css-loader": "^0.26.1",
+    "elm": "^0.18.0",
+    "elm-webpack-loader": "^4.1.0",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "html-webpack-plugin": "^2.24.1",
+    "less": "^2.7.1",
+    "less-loader": "^2.2.3",
+    "path": "^0.12.7",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.2"
+  }
+}
