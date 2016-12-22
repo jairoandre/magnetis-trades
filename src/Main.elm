@@ -1,6 +1,8 @@
 module Main exposing (..)
 
-import Html exposing (Html, div, h1, text, img)
+import Html exposing (Html)
+import Types exposing (..)
+import View exposing (view)
 
 
 main : Program Never Model Msg
@@ -15,16 +17,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model 0, Cmd.none )
-
-
-type alias Model =
-    { count : Int
-    }
-
-
-type Msg
-    = Home
+    ( Model [], Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -35,8 +28,3 @@ update message model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
-
-
-view : Model -> Html Msg
-view model =
-    h1 [] [ text <| toString <| model.count ]

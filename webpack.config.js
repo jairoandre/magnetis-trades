@@ -36,7 +36,7 @@ if (TARGET_ENV === 'development') {
         {
           test: /\.elm$/,
           exclude: [/elm-stuff/, /node_modules/],
-          loader: 'elm-webpack?pathToMake=node_modules/.bin/elm-make'
+          loader: 'elm-webpack?pathToMake=node_modules/.bin/elm-make&debug=true'
         },
         {
           test: /\.less?$/,
