@@ -32,6 +32,7 @@ import Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Types exposing (..)
+import Utils
 
 
 icon : String -> Html Msg
@@ -60,7 +61,7 @@ heroFoot =
 
 appHeader : Model -> Html Msg
 appHeader model =
-    section [ class "hero is-info is-info-gradient" ]
+    section [ class "hero is-info" ]
         [ div [ class "hero-body" ]
             [ div [ class "container" ]
                 [ h1 [ class "title" ] [ text "Magnetis Trades" ]
@@ -88,7 +89,7 @@ tradeToRow trade =
             trade.id /= -1
 
         tDate =
-            String.split "-" trade.date |> List.reverse |> String.join "/"
+            Utils.serverDateToBrazilianDate trade.date
     in
         tr []
             [ td [ style [ ( "color", tColor ) ] ] [ tIcon ]

@@ -5,6 +5,7 @@ import Types exposing (..)
 import View exposing (view)
 import Rest exposing (..)
 import Date exposing (Date)
+import Utils
 import Task
 
 
@@ -45,17 +46,16 @@ update message model =
             ( { model | tradeToAdd = Nothing }, Cmd.none )
 
         TypeDate newInput ->
-            case mode.tradeToAdd of
-              Nothing ->
-                ( model, Cmd.none)
+            case model.tradeToAdd of
+                Nothing ->
+                    ( model, Cmd.none )
 
-              Just t ->
-                let
-                  newDate =
-                    String.split "/" newInput |> List.reverse |> String.join "-" |> String.filter isDigit
-                in
-                  ( { model | tradeToAdd = { model.tradeToAdd | date = newDate } }, Cmd.none)
-
+                Just t ->
+                    let
+                        newTradeToAdd =
+                            { t | date = Utils.brazilianDateToServerDate newInput }
+                    in
+                        ( { model | tradeToAdd = Just newTradeToAdd }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
