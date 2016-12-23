@@ -29,6 +29,7 @@ import Html
         , option
         )
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Types exposing (..)
 
 
@@ -68,44 +69,45 @@ appHeader model =
         ]
 
 
-newTrade : Html Msg
-newTrade =
-    tr []
-        [ td [] [ input [ class "input", type_ "text", placeholder "Data" ] [] ]
-        , td []
-            [ span [ class "select" ]
-                [ select [ class "select" ]
-                    [ option [] [ text "Movimentação" ]
-                    , option [ value "0" ] [ text "Aplicação" ]
-                    , option [ value "1" ] [ text "Retirada" ]
-                    ]
-                ]
-            ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas" ] [] ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Valor por cota" ] [] ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Valor total", disabled True ] [] ]
-        , td [] [ a [] [ icon "times" ] ]
-        ]
-
-
 tradeToRow : Trade -> Html Msg
 tradeToRow trade =
-    tr []
-        [ td [] [ input [ class "input", type_ "text", placeholder "Data", value <| trade.date ] [] ]
-        , td []
-            [ span [ class "select" ]
-                [ select [ class "select" ]
-                    [ option [] [ text "Movimentação" ]
-                    , option [ value "0", selected <| trade.kind == 0 ] [ text "Aplicação" ]
-                    , option [ value "1", selected <| trade.kind == 1 ] [ text "Retirada" ]
+    let
+        ( tColor, tIcon ) =
+            case trade.kind of
+                0 ->
+                    ( "#70C800", icon "arrow-right" )
+
+                1 ->
+                    ( "#00B1DA", icon "arrow-left" )
+
+                _ ->
+                    ( "#000000", text "" )
+
+        tDate =
+            String.split "-" trade.date |> List.intersperse "/" |> List.foldl (++) ""
+    in
+        tr []
+            [ td [ style [ ( "color", tColor ) ] ] [ tIcon ]
+            , td []
+                [ p [ class "control has-icon has-icon-right" ]
+                    [ input [ class "input", type_ "text", placeholder "Data", value tDate, readonly True ] []
+                    , i [ class "fa fa-calendar" ] []
                     ]
                 ]
+            , td []
+                [ span [ class "select" ]
+                    [ select [ class "select", readonly True, disabled True ]
+                        [ option [] [ text "Movimentação" ]
+                        , option [ value "0", selected <| trade.kind == 0 ] [ text "Aplicação" ]
+                        , option [ value "1", selected <| trade.kind == 1 ] [ text "Retirada" ]
+                        ]
+                    ]
+                ]
+            , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas", value trade.shares, readonly True ] [] ]
+            , td [] [ input [ class "input", type_ "text", placeholder "Valor por cota", readonly True, value "R$ 1.000,00" ] [] ]
+            , td [] [ input [ class "input", type_ "text", placeholder "Valor total", disabled True ] [] ]
+            , td [] [ a [] [ icon "times" ] ]
             ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas" ] [ text trade.shares ] ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Valor por cota" ] [] ]
-        , td [] [ input [ class "input", type_ "text", placeholder "Valor total", disabled True ] [] ]
-        , td [] [ a [] [ icon "times" ] ]
-        ]
 
 
 tradesTable : Model -> Html Msg
@@ -117,12 +119,21 @@ tradesTable model =
                     []
 
                 Just ts ->
-                    List.map tradeToRow ts
+                    List.reverse ts |> List.map tradeToRow
+
+        ( tradeToAdd, addLink ) =
+            case model.tradeToAdd of
+                Nothing ->
+                    ( [], a [ href "#", onClick PrepareNewTrade ] [ text "INSERIR NOVA MOVIMENTAÇÃO" ] )
+
+                Just t ->
+                    ( [ tradeToRow t ], text "" )
     in
         table [ class "table" ]
             [ thead []
                 [ tr []
-                    [ th [] [ text "DATA" ]
+                    [ th [] []
+                    , th [] [ text "DATA" ]
                     , th [] [ text "TIPO" ]
                     , th [] [ text "QUANTIDADE DE COTAS" ]
                     , th [] [ text "VALOR POR COTA (R$)" ]
@@ -130,12 +141,12 @@ tradesTable model =
                     , th [] []
                     ]
                 ]
-            , tbody [] trades
+            , tbody [] <| trades ++ tradeToAdd
             , tfoot []
                 [ tr []
                     [ td [ colspan 6 ]
                         [ div [ class "has-text-centered" ]
-                            [ a [ href "#" ] [ text "INSERIR NOVA MOVIMENTAÇÃO" ] ]
+                            [ addLink ]
                         ]
                     ]
                 ]

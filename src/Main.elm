@@ -4,6 +4,8 @@ import Html exposing (Html)
 import Types exposing (..)
 import View exposing (view)
 import Rest exposing (..)
+import Date exposing (Date)
+import Task
 
 
 main : Program Never Model Msg
@@ -18,7 +20,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model Nothing True, fetchTrades )
+    ( Model Nothing True Nothing, fetchTrades )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -32,6 +34,15 @@ update message model =
 
         ReceiveTrades (Err _) ->
             ( { model | loading = False }, Cmd.none )
+
+        PrepareNewTrade ->
+            ( model, Task.perform AddTrade Date.now )
+
+        AddTrade now ->
+            ( { model | tradeToAdd = Just <| newTrade now }, Cmd.none )
+
+        AddTradeToList ->
+            ( { model | tradeToAdd = Nothing }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
