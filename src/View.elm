@@ -210,7 +210,6 @@ appFooter =
 view : Model -> Html Msg
 view model =
     div []
-        [ appHeader model
-        , appBody model
+        [ appBody model
         , appFooter
         ]
