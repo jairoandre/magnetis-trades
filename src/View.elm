@@ -27,9 +27,10 @@ import Html
         , input
         , select
         , option
+        , progress
         )
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Types exposing (..)
 
 
@@ -59,7 +60,7 @@ heroFoot =
 
 appHeader : Model -> Html Msg
 appHeader model =
-    section [ class "hero is-info" ]
+    section [ class "hero is-info is-info-gradient" ]
         [ div [ class "hero-body" ]
             [ div [ class "container" ]
                 [ h1 [ class "title" ] [ text "Magnetis Trades" ]
@@ -83,27 +84,38 @@ tradeToRow trade =
                 _ ->
                     ( "#000000", text "" )
 
+        onlyRead =
+            trade.id /= -1
+
         tDate =
-            String.split "-" trade.date |> List.intersperse "/" |> List.foldl (++) ""
+            String.split "-" trade.date |> List.reverse |> String.join "/"
     in
         tr []
             [ td [ style [ ( "color", tColor ) ] ] [ tIcon ]
             , td []
                 [ p [ class "control has-icon has-icon-right" ]
-                    [ input [ class "input", type_ "text", placeholder "Data", value tDate, readonly True ] []
+                    [ input
+                        [ class "input"
+                        , type_ "text"
+                        , placeholder "Data"
+                        , value tDate
+                        , readonly onlyRead
+                        , onInput TypeDate
+                        ]
+                        []
                     , i [ class "fa fa-calendar" ] []
                     ]
                 ]
             , td []
                 [ span [ class "select" ]
-                    [ select [ class "select", readonly True, disabled True ]
+                    [ select [ class "select", readonly onlyRead, disabled onlyRead ]
                         [ option [] [ text "Movimentação" ]
                         , option [ value "0", selected <| trade.kind == 0 ] [ text "Aplicação" ]
                         , option [ value "1", selected <| trade.kind == 1 ] [ text "Retirada" ]
                         ]
                     ]
                 ]
-            , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas", value trade.shares, readonly True ] [] ]
+            , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas", value trade.shares, readonly onlyRead ] [] ]
             , td [] [ input [ class "input", type_ "text", placeholder "Valor por cota", readonly True, value "R$ 1.000,00" ] [] ]
             , td [] [ input [ class "input", type_ "text", placeholder "Valor total", disabled True ] [] ]
             , td [] [ a [] [ icon "times" ] ]
@@ -155,10 +167,19 @@ tradesTable model =
 
 appBody : Model -> Html Msg
 appBody model =
-    section [ class "section" ]
-        [ div [ class "container" ]
-            [ tradesTable model ]
-        ]
+    let
+        content =
+            if model.loading then
+                div [ class "container" ]
+                    [ div [ class "content has-text-centered" ]
+                        [ a [ class "button is-primary is-loading loading-with" ] [] ]
+                    ]
+            else
+                div [ class "container" ]
+                    [ tradesTable model ]
+    in
+        section [ class "section" ]
+            [ content ]
 
 
 appFooter : Html Msg

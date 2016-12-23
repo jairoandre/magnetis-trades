@@ -44,6 +44,19 @@ update message model =
         AddTradeToList ->
             ( { model | tradeToAdd = Nothing }, Cmd.none )
 
+        TypeDate newInput ->
+            case mode.tradeToAdd of
+              Nothing ->
+                ( model, Cmd.none)
+
+              Just t ->
+                let
+                  newDate =
+                    String.split "/" newInput |> List.reverse |> String.join "-" |> String.filter isDigit
+                in
+                  ( { model | tradeToAdd = { model.tradeToAdd | date = newDate } }, Cmd.none)
+
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =

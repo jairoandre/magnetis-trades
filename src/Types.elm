@@ -17,6 +17,7 @@ type Msg
     | PrepareNewTrade
     | AddTrade Date
     | AddTradeToList
+    | TypeDate String
 
 
 type alias Fund =
