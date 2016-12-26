@@ -38,4 +38,4 @@ $ npm start
 
 ## Live demo
 
-Access this [link](http://localhost:3000) to see a live demo.
+Access this [link](https://mag-trades.herokuapp.com/) to see a live demo.
