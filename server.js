@@ -8,7 +8,7 @@ function initApp () {
 
   app.set('port', (process.env.PORT || 3000));
 
-  app.use('/dist', express.static(path.join(__dirname, 'dist')));
+  app.use('/public', express.static(path.join(__dirname, 'public')));
   app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
   app.get('/', function (req, res) {

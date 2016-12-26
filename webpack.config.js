@@ -64,7 +64,7 @@ if (TARGET_ENV === 'production') {
     entry: './index.js',
 
     output: {
-      path: './dist',
+      path: './public',
       filename: 'bundle.[hash].js'
     },
 
