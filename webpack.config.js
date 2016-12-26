@@ -90,7 +90,7 @@ if (TARGET_ENV === 'production') {
       new HtmlWebpackPlugin({
         title: 'Magnetis - Production',
         template: './index.ejs',
-        filename: './index.html'}),
+        filename: './../index.html'}),
       new ExtractTextPlugin('bundle.[hash].css')
     ]
 

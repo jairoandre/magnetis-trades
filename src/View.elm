@@ -28,11 +28,16 @@ import Html
         , select
         , option
         , progress
+        , label
+        , button
         )
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, on, keyCode, targetValue)
 import Types exposing (..)
+import Json.Decode as JD
 import Utils
+import Animation
+import Validation
 
 
 icon : String -> Html Msg
@@ -59,20 +64,8 @@ heroFoot =
         ]
 
 
-appHeader : Model -> Html Msg
-appHeader model =
-    section [ class "hero is-info" ]
-        [ div [ class "hero-body" ]
-            [ div [ class "container" ]
-                [ h1 [ class "title" ] [ text "Magnetis Trades" ]
-                , h2 [ class "subtitle" ] [ text "A sample application coded with Elm and Bulma." ]
-                ]
-            ]
-        ]
-
-
-tradeToRow : Trade -> Html Msg
-tradeToRow trade =
+tradeToRow : Int -> Float -> Int -> Trade -> List (Html Msg)
+tradeToRow lastKey shareValue idx trade =
     let
         ( tColor, tIcon ) =
             case trade.kind of
@@ -89,9 +82,41 @@ tradeToRow trade =
             trade.id /= -1
 
         tDate =
-            Utils.serverDateToBrazilianDate trade.date
+            Utils.serverDateToBrazilianDate trade.date lastKey
+
+        total =
+            trade.shares * shareValue
+
+        totalStr =
+            Utils.formatCurrency "R$ " <| toString total
+
+        trClass =
+            if trade.id == -1 then
+                "new-trade"
+            else
+                ""
+
+        validClass =
+            if trade.valid then
+                ""
+            else
+                " warn-trade"
+
+        warnMessage =
+            if trade.showMsg then
+                [ tr [ class "warn-trade" ]
+                    [ td [ colspan 7 ]
+                        [ p []
+                            [ icon "warning"
+                            , text "Seu saldo está negativo."
+                            ]
+                        ]
+                    ]
+                ]
+            else
+                []
     in
-        tr []
+        [ tr [ class <| trClass ++ validClass ]
             [ td [ style [ ( "color", tColor ) ] ] [ tIcon ]
             , td []
                 [ p [ class "control has-icon has-icon-right" ]
@@ -101,7 +126,8 @@ tradeToRow trade =
                         , placeholder "Data"
                         , value tDate
                         , readonly onlyRead
-                        , onInput TypeDate
+                        , onInput (TypeDate idx)
+                        , on "keydown" (JD.map KeyPressed keyCode)
                         ]
                         []
                     , i [ class "fa fa-calendar" ] []
@@ -109,38 +135,28 @@ tradeToRow trade =
                 ]
             , td []
                 [ span [ class "select" ]
-                    [ select [ class "select", readonly onlyRead, disabled onlyRead ]
+                    [ select [ class "select", readonly onlyRead, disabled onlyRead, on "change" (JD.map (ChangeKind idx) targetValue) ]
                         [ option [] [ text "Movimentação" ]
                         , option [ value "0", selected <| trade.kind == 0 ] [ text "Aplicação" ]
                         , option [ value "1", selected <| trade.kind == 1 ] [ text "Retirada" ]
                         ]
                     ]
                 ]
-            , td [] [ input [ class "input", type_ "text", placeholder "Quantidade de cotas", value trade.shares, readonly onlyRead ] [] ]
-            , td [] [ input [ class "input", type_ "text", placeholder "Valor por cota", readonly True, value "R$ 1.000,00" ] [] ]
-            , td [] [ input [ class "input", type_ "text", placeholder "Valor total", disabled True ] [] ]
-            , td [] [ a [] [ icon "times" ] ]
+            , td [] [ input [ class "input right-align", type_ "text", placeholder "Quantidade de cotas", value (toString trade.shares), onInput (TypeShares idx) ] [] ]
+            , td [] [ input [ class "input right-align", type_ "text", placeholder "Valor por cota", readonly True, value <| Utils.formatCurrency "R$ " <| toString shareValue ] [] ]
+            , td [] [ input [ class "input right-align", type_ "text", placeholder "Valor total", disabled True, value totalStr ] [] ]
+            , td []
+                [ a [ onClick (RemoveTrade idx) ] [ icon "times" ] ]
             ]
+        ]
+            ++ warnMessage
 
 
 tradesTable : Model -> Html Msg
 tradesTable model =
     let
         trades =
-            case model.trades of
-                Nothing ->
-                    []
-
-                Just ts ->
-                    List.reverse ts |> List.map tradeToRow
-
-        ( tradeToAdd, addLink ) =
-            case model.tradeToAdd of
-                Nothing ->
-                    ( [], a [ href "#", onClick PrepareNewTrade ] [ text "INSERIR NOVA MOVIMENTAÇÃO" ] )
-
-                Just t ->
-                    ( [ tradeToRow t ], text "" )
+            List.concat <| List.indexedMap (tradeToRow model.lastKey model.shareValue) <| Validation.validateTrades 0 [] model.trades
     in
         table [ class "table" ]
             [ thead []
@@ -154,33 +170,74 @@ tradesTable model =
                     , th [] []
                     ]
                 ]
-            , tbody [] <| trades ++ tradeToAdd
+            , tbody [] trades
             , tfoot []
                 [ tr []
-                    [ td [ colspan 6 ]
+                    [ td [ colspan 7 ]
                         [ div [ class "has-text-centered" ]
-                            [ addLink ]
+                            [ a [ onClick AddTrade ] [ text "INSERIR NOVA MOVIMENTAÇÃO" ] ]
                         ]
                     ]
                 ]
             ]
 
 
+shareValueInput : Model -> Html Msg
+shareValueInput model =
+    div [ class "content" ]
+        [ p [ class "control" ]
+            [ label [ class "label" ] [ text "Valor da Cota" ]
+            , input [ class "input right-align", value <| Utils.formatCurrency "R$ " (toString model.shareValue), onInput TypeShareValue ] []
+            ]
+        ]
+
+
+buttons : Model -> Html Msg
+buttons model =
+    div [ class "content" ]
+        [ p [ class "control" ]
+            [ button [ class "button is-primary", onClick SaveTrades ] [ text "Salvar Movimentações" ]
+            , button [ class "button is-link", onClick FetchTrades ] [ text "Cancelar" ]
+            ]
+        ]
+
+
+appHeader : Model -> Html Msg
+appHeader model =
+    section [ class "hero is-info" ]
+        [ div [ class "hero-body" ]
+            [ div [ class "container" ]
+                [ h1 [ class "title" ] [ text "Magnetis Trades" ]
+                , h2 [ class "subtitle" ] [ text "A sample application coded with Elm and Bulma." ]
+                ]
+            ]
+        ]
+
+
+loadingDiv : Model -> Html Msg
+loadingDiv model =
+    div
+        (Animation.render model.loadingStyle ++ [ class "loading-div" ])
+        [ div [ class "spinner" ]
+            [ div [ class "rect1" ] []
+            , div [ class "rect2" ] []
+            , div [ class "rect3" ] []
+            , div [ class "rect4" ] []
+            , div [ class "rect5" ] []
+            , p [] [ text "Carregando..." ]
+            ]
+        ]
+
+
 appBody : Model -> Html Msg
 appBody model =
-    let
-        content =
-            if model.loading then
-                div [ class "container" ]
-                    [ div [ class "content has-text-centered" ]
-                        [ a [ class "button is-primary is-loading loading-with" ] [] ]
-                    ]
-            else
-                div [ class "container" ]
-                    [ tradesTable model ]
-    in
-        section [ class "section" ]
-            [ content ]
+    section [ class "section" ]
+        [ div [ class "container" ]
+            [ shareValueInput model
+            , tradesTable model
+            , buttons model
+            ]
+        ]
 
 
 appFooter : Html Msg
@@ -210,6 +267,7 @@ appFooter =
 view : Model -> Html Msg
 view model =
     div []
-        [ appBody model
+        [ loadingDiv model
+        , appBody model
         , appFooter
         ]
