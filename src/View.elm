@@ -79,7 +79,7 @@ tradeToRow lastKey shareValue idx trade =
                     ( "#000000", text "" )
 
         onlyRead =
-            trade.id /= -1
+            trade.index /= -1
 
         tDate =
             Utils.serverDateToBrazilianDate trade.date lastKey
@@ -91,7 +91,7 @@ tradeToRow lastKey shareValue idx trade =
             Utils.formatCurrency "R$ " <| toString total
 
         trClass =
-            if trade.id == -1 then
+            if trade.index == -1 then
                 "new-trade"
             else
                 ""
@@ -231,13 +231,27 @@ loadingDiv model =
 
 appBody : Model -> Html Msg
 appBody model =
-    section [ class "section" ]
-        [ div [ class "container" ]
-            [ shareValueInput model
-            , tradesTable model
-            , buttons model
+    let
+        messageDiv =
+            case model.message of
+                Nothing ->
+                    []
+
+                Just msg ->
+                    [ div [ class "notification is-danger" ]
+                        [ button [ class "delete", onClick ClearMessage ] []
+                        , text msg
+                        ]
+                    ]
+    in
+        section [ class "section" ]
+            [ div [ class "container" ] <|
+                messageDiv
+                    ++ [ shareValueInput model
+                       , tradesTable model
+                       , buttons model
+                       ]
             ]
-        ]
 
 
 appFooter : Html Msg

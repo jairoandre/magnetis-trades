@@ -10,10 +10,16 @@
 
 ## Instructions
 
-Clone this repository and run the follow command to install the dependencies:
+Clone this repository and run the follow command to install the node dependencies:
 
 ```bash
 $ npm install
+```
+
+Then, install the Elm dependencies:
+
+```bash
+$ npm run elm-install
 ```
 
 ### Scripts

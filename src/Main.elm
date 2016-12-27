@@ -48,7 +48,7 @@ update message model =
         SaveTrades ->
             let
                 trades =
-                    List.filter (\t -> t.id == -1) model.trades
+                    List.filter (\t -> t.index == -1) model.trades
             in
                 if List.length trades == 0 then
                     ( model, Cmd.none )
@@ -64,21 +64,13 @@ update message model =
             )
 
         ReceiveTrades (Err m) ->
-            let
-                t =
-                    Debug.log "Erro: " m
-            in
-                ( { model | loadingStyle = hideLoading model }, Cmd.none )
+            ( { model | loadingStyle = hideLoading model, message = Just (toString m) }, Cmd.none )
 
         SaveNewTrades (Ok jsonValue) ->
-            let
-                l =
-                    Debug.log "json value: " jsonValue
-            in
-                ( model, fetchTrades )
+            ( model, fetchTrades )
 
-        SaveNewTrades (Err _) ->
-            ( { model | loadingStyle = hideLoading model }, Cmd.none )
+        SaveNewTrades (Err m) ->
+            ( { model | loadingStyle = hideLoading model, message = Just (toString m) }, Cmd.none )
 
         TypeShareValue newInput ->
             ( { model | shareValue = Utils.currencyToFloat newInput }, Cmd.none )
@@ -103,10 +95,10 @@ update message model =
                         ( model, Cmd.none )
 
                     Just t ->
-                        if t.id == -1 then
+                        if t.index == -1 then
                             ( { model | trades = trades }, Cmd.none )
                         else
-                            ( { model | trades = trades, loadingStyle = showLoading model }, deleteTrade t.id )
+                            ( { model | trades = trades, loadingStyle = showLoading model }, deleteTrade t.index )
 
         TradeRemoved (Ok jsonValue) ->
             let
@@ -120,11 +112,10 @@ update message model =
                 )
 
         TradeRemoved (Err m) ->
-            let
-                t =
-                    Debug.log "Erro: " m
-            in
-                ( { model | loadingStyle = hideLoading model }, Cmd.none )
+            ( { model | loadingStyle = hideLoading model, message = Just (toString m) }, Cmd.none )
+
+        ClearMessage ->
+            ( { model | message = Nothing }, Cmd.none )
 
         KeyPressed newKey ->
             ( { model | lastKey = newKey }, Cmd.none )

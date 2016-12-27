@@ -10,7 +10,7 @@ fetchTrades : Cmd Msg
 fetchTrades =
     let
         url =
-            "https://magnetis-trades.herokuapp.com/trades.json"
+            "https://magnetis-b12d8.firebaseio.com/trades.json"
     in
         Http.send ReceiveTrades (Http.get url decodeTrades)
 
@@ -21,30 +21,22 @@ tradeToJson trade =
         [ ( "date", JE.string trade.date )
         , ( "kind", JE.int trade.kind )
         , ( "shares", JE.float trade.shares )
+        , ( "deleted", JE.bool False )
         ]
 
 
 tradeValue : List Trade -> JE.Value
 tradeValue trades =
-    let
-        tradesJson =
-            List.map tradeToJson trades
-    in
-        JE.object
-            [ ( "investment"
-              , JE.object
-                    [ ( "trades_attributes", JE.list tradesJson ) ]
-              )
-            ]
+    JE.list <| List.map tradeToJson trades
 
 
 saveNewTrades : List Trade -> Cmd Msg
 saveNewTrades trades =
     let
         url =
-            "https://magnetis-trades.herokuapp.com/investments.json"
+            "https://magnetis-trades.herokuapp.com/trades.json"
     in
-        Http.send SaveNewTrades (customRequest "POST" url [] (Http.jsonBody <| tradeValue trades))
+        Http.send SaveNewTrades (customRequest "PUT" url [] (Http.jsonBody <| tradeValue trades))
 
 
 decodeTrades : JD.Decoder (List Trade)
@@ -56,9 +48,9 @@ deleteTrade : Int -> Cmd Msg
 deleteTrade id =
     let
         url =
-            "https://magnetis-trades.herokuapp.com/trades/" ++ (toString id) ++ ".json"
+            "https://magnetis-b12d8.firebaseio.com/trades/" ++ (toString id) ++ "/.json"
     in
-        Http.send TradeRemoved (customRequest "DELETE" url [] Http.emptyBody)
+        Http.send TradeRemoved (customRequest "PATCH" url [] <| Http.jsonBody (JE.object [ ( "deleted", JE.bool True ) ]))
 
 
 customRequest : String -> String -> List Http.Header -> Http.Body -> Http.Request JD.Value
@@ -81,9 +73,8 @@ stringToFloat str =
 
 decodeTrade : JD.Decoder Trade
 decodeTrade =
-    JD.map5 (Trade True False)
+    JD.map4 (Trade True False -1)
         (JD.field "date" JD.string)
-        (JD.field "fund_id" (JD.oneOf [ JD.int, JD.null -1 ]))
-        (JD.field "id" JD.int)
         (JD.field "kind" JD.int)
-        (JD.field "shares" (JD.map stringToFloat JD.string))
+        (JD.field "shares" JD.float)
+        (JD.field "deleted" <| JD.oneOf [ JD.null False, JD.bool ])
